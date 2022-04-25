@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from cgitb import handler
 import requests
 import json
 import configparser
@@ -9,8 +10,8 @@ config = configparser.ConfigParser()
 config.read('config')
 
 
+
 def request(handler):
-    requests.urllib3.disable_warnings()
     url="https://{}/api/ipam/{}".format(config['PARAMS']['nb_ip'], handler)
     token=config['PARAMS']['token']
     headers = {
@@ -52,6 +53,11 @@ def ip_check_create():
                 items = items + 1
         print('Total IPs Alive: ', total)
 
+def add_ip():
+  handler = 'ip-addresses/?limit=5000'
+  responsep = request(handler)
+
+  pass
 def exist_check(hip):
     a = input('exist')
     handler = 'ip-addresses/?limit=5000'
