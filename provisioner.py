@@ -12,6 +12,7 @@ config.read('config')
 
 
 def request(handler):
+    requests.urllib3.disable_warnings()
     url="https://{}/api/ipam/{}".format(config['PARAMS']['nb_ip'], handler)
     token=config['PARAMS']['token']
     headers = {
