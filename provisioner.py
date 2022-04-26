@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-from cgitb import handler
 import requests
 import json
 import configparser
@@ -36,6 +35,7 @@ def ip_check_create():
     network = get_prefix(responsep)
     for items in network:
         network = items.split('.')
+        prefix = items.split('/')
         items = 1
         total = 0
         for key, val in enumerate(responsep['results']):
@@ -47,6 +47,7 @@ def ip_check_create():
                 host = ping('{}.{}.{}.{}'.format( network[0], network[1], network[2], items), count=1, interval=0.01, timeout=0.1, privileged=False)
                 if host.is_alive ==  True:
                     print('{}.{}.{}.{}'.format( network[0], network[1], network[2], items))
+                    add_ip(hip, prefix[1])
                     total = total + 1 
                     print('IP exists: ', hip)
                 else:
@@ -54,9 +55,21 @@ def ip_check_create():
                 items = items + 1
         print('Total IPs Alive: ', total)
 
-def add_ip():
-  handler = 'ip-addresses/?limit=5000'
-  responsep = request(handler)
+def add_ip(hip, prefix):
+  headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Token 5cc0630c860dcb61e9633b1934ba3c393b8c5d69",
+}
+  a = input('exist')
+  print(hip)
+  ipdict = {"address": "{}/{}".format(hip, prefix)}
+  print(ipdict)
+  a = input('exist')
+  responsep = requests.post('https://core-ipam001.prod.theblackcore.com/api/ipam/ip-addresses/', json=ipdict, verify=False, headers=headers)
+
+
+  
+
 
   pass
 def exist_check(hip):
