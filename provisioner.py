@@ -46,20 +46,19 @@ def ip_check_create():
             print('testing network: {}'.format(_networkid))
             while items != 254:
                 hip = '{}.{}.{}.{}'.format( network[0], network[1], network[2], items)
-                host = ping('{}.{}.{}.{}'.format( network[0], network[1], network[2], items), count=1, interval=0.01, timeout=0.1, privileged=False)
                 exists, ip_check_dict = exist_check(ip_check_dict, hip, prefix[1])
-                if host.is_alive ==  True and exists is None:
-                    total = total + 1 
-                    print('{}.{}.{}.{}'.format( network[0], network[1], network[2], items))
-                    _val, ip_check_dict  = exist_check(ip_check_dict, hip, prefix[1])
-                    if _val is True:
-                      pass
-                    else:
-                      add_ip(hip, prefix[1])
-                elif host.is_alive == False and exists is True:
-                    print('{} is dead but is in the database'.format(hip))
-                else:
-                  pass  
+                host = ping('{}.{}.{}.{}'.format( network[0], network[1], network[2], items), count=1, interval=0.01, timeout=0.1, privileged=False)
+                if host.is_alive ==  True and exists is False:
+                  total = total + 1 
+                  print('{}.{}.{}.{}'.format( network[0], network[1], network[2], items))
+                  add_ip(hip, prefix[1])
+                  #exists, ip_check_dict  = exist_check(ip_check_dict, hip, prefix[1])
+                  if exists is True:
+                    pass
+                  elif host.is_alive == False and exists is True:
+                      print('{} is dead but is in the database'.format(hip))
+                  else:
+                    pass  
                 items = items + 1
         print('Total IPs Alive: ', total)
 
