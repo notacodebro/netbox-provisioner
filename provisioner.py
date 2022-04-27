@@ -19,72 +19,90 @@ def request(handler):
         "Authorization": "Token {}".format(token),
  
         }
-    response = requests.get(url, verify=False, headers=headers)
-    return response.json()
+    return url, headers
 
-def get_prefix(responsep):
+def get_prefix(response):
     network = []
-    for key, val in enumerate(responsep['results']):
+    for key, val in enumerate(response['results']):
         octet = (val['prefix'])
         network.append(octet)
     return network
 
 def ip_check_create():
+    ip_check_dict = {}  
     handler = 'prefixes/'
-    responsep = request(handler)
-    network = get_prefix(responsep)
+    url, headers = request(handler)
+    response = requests.get(url, verify=False, headers=headers)
+    response = response.json()
+    network = get_prefix(response)
     for items in network:
         network = items.split('.')
         prefix = items.split('/')
         items = 1
         total = 0
-        for key, val in enumerate(responsep['results']):
+        for key, val in enumerate(response['results']):
             _networkid = ('{}.{}.{}'.format( network[0], network[1], network[2]))
             print('*'*25)
             print('testing network: {}'.format(_networkid))
             while items != 254:
                 hip = '{}.{}.{}.{}'.format( network[0], network[1], network[2], items)
                 host = ping('{}.{}.{}.{}'.format( network[0], network[1], network[2], items), count=1, interval=0.01, timeout=0.1, privileged=False)
-                if host.is_alive ==  True:
-                    print('{}.{}.{}.{}'.format( network[0], network[1], network[2], items))
-                    add_ip(hip, prefix[1])
+                exists, ip_check_dict = exist_check(ip_check_dict, hip, prefix[1])
+                if host.is_alive ==  True and exists is None:
                     total = total + 1 
-                    print('IP exists: ', hip)
+                    print('{}.{}.{}.{}'.format( network[0], network[1], network[2], items))
+                    _val, ip_check_dict  = exist_check(ip_check_dict, hip, prefix[1])
+                    if _val is True:
+                      pass
+                    else:
+                      add_ip(hip, prefix[1])
+                elif host.is_alive == False and exists is True:
+                    print('{} is dead but is in the database'.format(hip))
                 else:
-                    pass
+                  pass  
                 items = items + 1
         print('Total IPs Alive: ', total)
 
-def add_ip(hip, prefix):
-  headers = {
-    "Content-Type": "application/json",
-    "Authorization": "Token 5cc0630c860dcb61e9633b1934ba3c393b8c5d69",
-}
-  a = input('exist')
-  print(hip)
+def tag():
+  print('entering tagging function')
+  handler = "ip-addresses/{}".format(ipid)
+  url, headers = request(handler)
   ipdict = {"address": "{}/{}".format(hip, prefix)}
-  print(ipdict)
-  a = input('exist')
-  responsep = requests.post('https://core-ipam001.prod.theblackcore.com/api/ipam/ip-addresses/', json=ipdict, verify=False, headers=headers)
+  response = requests.post(url, json=ipdict, verify=False, headers=headers)
+  print(response)
+
+def add_ip(hip, prefix):
+  print('entering add IP function')
+  a = input('adding IP')
+  handler = "ip-addresses/"
+  url, headers = request(handler)
+ # a = input('adding IP')
+  ipdict = {"address": "{}/{}".format(hip, prefix)}
+  response = requests.post(url, json=ipdict, verify=False, headers=headers)
+  print(response)
+  #a = input('pausing')
 
 
-  
-
-
-  pass
-def exist_check(hip):
-    a = input('exist')
-    handler = 'ip-addresses/?limit=5000'
-    responsep = request(handler)
-    a = input('exist')
-    for index, key in enumerate(responsep["results"]):
-        ip=responsep["results"][index]["address"].split("/")
-        print(ip[0], hip)
-        a = input('exist')
-        a = input('exist')
-        if ip[0] == hip:
-            print('exists!')
-        else:
-            pass
+def exist_check(ip_check_dict, hip, prefix):
+  #print('entering IP checking function')
+  handler = 'ip-addresses/?limit=5000'
+  if not ip_check_dict:
+    url, headers = request(handler)
+    a = input('making API call')
+    response = requests.get(url, verify=False, headers=headers)
+    ip_check_dict = response.json()
+  for key, val in enumerate(ip_check_dict['results']):
+    _network = val["display"].split("/")
+    #if hip == _network[0]:
+    #  ipid = (val['id'])
+    #print(hip, _network[0])
+    if _network[0] == hip:
+      print('ip exists, skipping')
+      return True, ip_check_dict
+    else:
+      pass
+  return False, ip_check_dict
     
+
+
 ip_check_create()
