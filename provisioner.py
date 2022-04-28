@@ -4,6 +4,7 @@ import json
 import configparser
 import socket
 from icmplib import ping
+import time
 
 config = configparser.ConfigParser()
 config.read('config')
@@ -72,7 +73,7 @@ def tag():
 
 def add_ip(hip, prefix):
   print('entering add IP function')
-  a = input('adding IP')
+ # a = input('adding IP')
   handler = "ip-addresses/"
   url, headers = request(handler)
  # a = input('adding IP')
@@ -105,3 +106,5 @@ def exist_check(ip_check_dict, hip, prefix):
 
 
 ip_check_create()
+ts = time.time()
+print(ts)
