@@ -82,6 +82,23 @@ def add_ip(hip, prefix):
   print(response)
   #a = input('pausing')
 
+def dns_update(hip, ipid):
+    handler = "ip-addresses/{}/".format(ipid)
+    print('entering dns function')
+    url, headers = request(handler)
+    try:
+        print(hip)
+        dns_name = socket.gethostbyaddr(hip)
+        # a = input('modifying dns')
+        print(dns_name[0])
+        dnsdict = {"dns_name": "{}".format(dns_name[0])}
+        response = requests.patch(url, json=dnsdict, verify=False, headers=headers)
+        print(response)
+    except:
+        print('notfound')
+        pass
+    #a = input('pausing')
+
 
 def exist_check(ip_check_dict, hip, prefix):
   #print('entering IP checking function')
@@ -93,11 +110,13 @@ def exist_check(ip_check_dict, hip, prefix):
     ip_check_dict = response.json()
   for key, val in enumerate(ip_check_dict['results']):
     _network = val["display"].split("/")
+    ipid = val['id']
     #if hip == _network[0]:
     #  ipid = (val['id'])
     #print(hip, _network[0])
     if _network[0] == hip:
       print('ip exists, skipping')
+      dns_update(hip, ipid)
       return True, ip_check_dict
     else:
       pass
