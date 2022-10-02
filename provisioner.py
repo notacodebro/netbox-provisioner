@@ -34,20 +34,21 @@ def get_prefix(response):
     return network
 
 def set_tag():
-  print('entering tagging function')
-  handler = "ip-addresses/{}".format(ipid)
-  url, headers = request(handler)
-  ipdict = {"address": "{}/{}".format(hip, prefix)}
-  response = requests.patch(url, json=ipdict, verify=False, headers=headers)
-  print(response)
+    
+    print('entering tagging function')
+    handler = "ip-addresses/{}".format(ipid)
+    url, headers = request(handler)
+    ipdict = {"tags": "['{}']".format(tag)}
+    response = requests.patch(url, json=ipdict, verify=False, headers=headers)
+    print(response)
 
 def add_ip(hip, prefix):
-  handler = "ip-addresses/"
-  url, headers = request(handler)
-  ipdict = {"address": "{}/{}".format(hip, prefix)}
-  response = requests.post(url, json=ipdict, verify=False, headers=headers)
-  print(response)
-  blah = input("added IP:".format(hip))
+    handler = "ip-addresses/"
+    url, headers = request(handler)
+    ipdict = {"address": "{}/{}".format(hip, prefix)}
+    response = requests.post(url, json=ipdict, verify=False, headers=headers)
+    print(response)
+    blah = input("added IP:".format(hip))
 
 def dns_update(hip, ipid):
     handler = "ip-addresses/{}/".format(ipid)
@@ -58,31 +59,27 @@ def dns_update(hip, ipid):
         dnsdict = {"dns_name": "{}".format(dns_name[0])}
         response = requests.patch(url, json=dnsdict, verify=False, headers=headers)
         print('adding dns record for {}'.format(hip))
-        #print(response)
     except:
         print('PRT record missing for {}. Please check zone'.format(hip))
 
 def exist_check(ip_check_dict, hip, prefix):
-  handler = 'ip-addresses/?limit=5000'
-  if not ip_check_dict:
-    url, headers = request(handler)
-    response = requests.get(url, verify=False, headers=headers)
-    ip_check_dict = response.json()
-  for key, val in enumerate(ip_check_dict['results']):
-    _network = val["display"].split("/")
-    ipid = val['id']
-    if _network[0] == hip:
-      dns_update(hip, ipid)
-      return True, ip_check_dict
-    else:
-      pass
-  return False, ip_check_dict
+    handler = 'ip-addresses/?limit=5000'
+    if not ip_check_dict:
+        url, headers = request(handler)
+        response = requests.get(url, verify=False, headers=headers)
+        ip_check_dict = response.json()
+    for key, val in enumerate(ip_check_dict['results']):
+        _network = val["display"].split("/")
+        ipid = val['id']
+        if _network[0] == hip:
+            dns_update(hip, ipid)
+            return True, ip_check_dict
+        else:
+            pass
+    return False, ip_check_dict
 
 def ip_check(hip):
     return ping(hip, count=1, interval=0.01, timeout=0.1, privileged=False)
-    pass
-
-
 
 def ip_check_create():
     ip_check_dict = {}  
