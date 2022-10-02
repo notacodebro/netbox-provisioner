@@ -65,7 +65,6 @@ def dns_update(hip, ipid):
         pass
 
 def exist_check(ip_check_dict, hip, prefix):
-  #print('entering IP checking function')
   handler = 'ip-addresses/?limit=5000'
   if not ip_check_dict:
     url, headers = request(handler)
@@ -75,9 +74,6 @@ def exist_check(ip_check_dict, hip, prefix):
   for key, val in enumerate(ip_check_dict['results']):
     _network = val["display"].split("/")
     ipid = val['id']
-    #if hip == _network[0]:
-    #  ipid = (val['id'])
-    #print(hip, _network[0])
     if _network[0] == hip:
       print('ip exists, skipping')
       dns_update(hip, ipid)
@@ -114,15 +110,13 @@ def ip_check_create():
                 print('pinging: ', hip )
                 #host = ping(hip, count=1, interval=0.01, timeout=0.1, privileged=False)
                 host = ip_check(hip)
+                if exists is True:
+                    total = total + 1
                 if host.is_alive ==  True and exists is False:
-                  total = total + 1 
                   add_ip(hip, sortednet[1])
-                  #exists, ip_check_dict  = exist_check(ip_check_dict, hip, prefix[1])
-                  if exists is True:
-                    pass
-                  elif host.is_alive == False and exists is True:
-                      print('{} is dead but is in the database'.format(hip))
-                  else:
+                elif host.is_alive == False and exists is True:
+                    print('{} is dead but is in the database'.format(hip))
+                else:
                     pass  
                 items = items + 1
         print('Total IPs Alive: ', total)
