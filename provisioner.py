@@ -86,6 +86,12 @@ def exist_check(ip_check_dict, hip, prefix):
       pass
   return False, ip_check_dict
 
+def ip_check(hip):
+    return ping(hip, count=1, interval=0.01, timeout=0.1, privileged=False)
+    pass
+
+
+
 def ip_check_create():
     ip_check_dict = {}  
     handler = 'prefixes/'
@@ -94,22 +100,23 @@ def ip_check_create():
     response = response.json()
     network = get_prefix(response)
     for items in network:
-        network = items.split('.')
-        prefix = items.split('/')
+        networkid = items.split('.')
+        network = "{}.{}.{}.".format(networkid[0], networkid[1], networkid[2])
+        sortednet = items.split('/')
         items = 1
         total = 0
         for key, val in enumerate(response['results']):
-            _networkid = ('{}.{}.{}'.format( network[0], network[1], network[2]))
             print('*'*25)
-            print('testing network: {}'.format(_networkid))
-            while items != 254:
-                hip = '{}.{}.{}.{}'.format( network[0], network[1], network[2], items)
-                exists, ip_check_dict = exist_check(ip_check_dict, hip, prefix[1])
-                host = ping('{}.{}.{}.{}'.format( network[0], network[1], network[2], items), count=1, interval=0.01, timeout=0.1, privileged=False)
+            print('testing network: {}'.format(sortednet[0]))
+            while items != 255:
+                hip = '{}{}'.format(network, items)
+                exists, ip_check_dict = exist_check(ip_check_dict, hip, sortednet[1])
+                print('pinging: ', hip )
+                #host = ping(hip, count=1, interval=0.01, timeout=0.1, privileged=False)
+                host = ip_check(hip)
                 if host.is_alive ==  True and exists is False:
                   total = total + 1 
-                  print('{}.{}.{}.{}'.format( network[0], network[1], network[2], items))
-                  add_ip(hip, prefix[1])
+                  add_ip(hip, sortednet[1])
                   #exists, ip_check_dict  = exist_check(ip_check_dict, hip, prefix[1])
                   if exists is True:
                     pass
