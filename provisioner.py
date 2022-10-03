@@ -33,11 +33,12 @@ def get_prefix(response):
         network.append(octet)
     return network
 
-def set_tag():
-    
+def set_tag(ipid):
+    tag = 'ip-down' 
     print('entering tagging function')
-    handler = "ip-addresses/{}".format(ipid)
+    handler = "ip-addresses/{}/".format(ipid)
     url, headers = request(handler)
+    print(ipid)
     ipdict = {"tags": "['{}']".format(tag)}
     response = requests.patch(url, json=ipdict, verify=False, headers=headers)
     print(response)
@@ -63,6 +64,7 @@ def dns_update(hip, ipid):
         print('PRT record missing for {}. Please check zone'.format(hip))
 
 def exist_check(ip_check_dict, hip, prefix):
+    ipid = 0
     handler = 'ip-addresses/?limit=5000'
     if not ip_check_dict:
         url, headers = request(handler)
@@ -73,10 +75,10 @@ def exist_check(ip_check_dict, hip, prefix):
         ipid = val['id']
         if _network[0] == hip:
             dns_update(hip, ipid)
-            return True, ip_check_dict
+            return True, ip_check_dict, ipid
         else:
             pass
-    return False, ip_check_dict
+    return False, ip_check_dict, ipid
 
 def ip_check(hip):
     return ping(hip, count=1, interval=0.01, timeout=0.1, privileged=False)
@@ -99,7 +101,7 @@ def ip_check_create():
         for key, val in enumerate(response['results']):
             while items != 255:
                 hip = '{}{}'.format(network, items)
-                exists, ip_check_dict = exist_check(ip_check_dict, hip, sortednet[1])
+                exists, ip_check_dict, ipid = exist_check(ip_check_dict, hip, sortednet[1])
                 #host = ping(hip, count=1, interval=0.01, timeout=0.1, privileged=False)
                 host = ip_check(hip)
                 if exists is True:
@@ -108,6 +110,7 @@ def ip_check_create():
                   add_ip(hip, sortednet[1])
                 elif host.is_alive == False and exists is True:
                     print('{} is offline but is in the database'.format(hip))
+                    set_tag(ipid)
                 else:
                     pass  
                 items = items + 1
