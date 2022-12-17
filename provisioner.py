@@ -5,6 +5,7 @@ import configparser
 import socket
 from icmplib import ping
 import time
+import ipaddress
 
 config = configparser.ConfigParser()
 config.read('config')
@@ -63,7 +64,7 @@ def dns_update(hip, ipid):
     except:
         print('PRT record missing for {}. Please check zone'.format(hip))
 
-def exist_check(ip_check_dict, hip, prefix):
+def exist_check(ip_check_dict, hip):
     ipid = 0
     handler = 'ip-addresses/?limit=5000'
     if not ip_check_dict:
@@ -91,29 +92,33 @@ def ip_check_create():
     response = response.json()
     network = get_prefix(response)
     for items in network:
-        networkid = items.split('.')
-        network = "{}.{}.{}.".format(networkid[0], networkid[1], networkid[2])
-        sortednet = items.split('/')
-        items = 1
+        #networkid = items.split('.')
+        #network = "{}.{}.{}.".format(networkid[0], networkid[1], networkid[2])
+        netnet = ipaddress.ip_network(items)
+        #print(type(netnet))
+        prefix = (str(netnet).split('/')[1])
+        print(prefix)
+        blah = input('hit a key')
+        #sortednet = items.split('/')
+        #items = 1
         total = 0
         print('*'*25)
-        print('testing network: {}'.format(sortednet[0]))
-        for key, val in enumerate(response['results']):
-            while items != 255:
-                hip = '{}{}'.format(network, items)
-                exists, ip_check_dict, ipid = exist_check(ip_check_dict, hip, sortednet[1])
-                #host = ping(hip, count=1, interval=0.01, timeout=0.1, privileged=False)
-                host = ip_check(hip)
-                if exists is True:
-                    total = total + 1
-                if host.is_alive ==  True and exists is False:
-                  add_ip(hip, sortednet[1])
-                elif host.is_alive == False and exists is True:
-                    print('{} is offline but is in the database'.format(hip))
-                    set_tag(ipid)
-                else:
-                    pass  
-                items = items + 1
+        print('testing network: {}'.format(netnet))
+        for nets in netnet.hosts():
+            hip = str(nets)
+            print(hip)
+            exists, ip_check_dict, ipid = exist_check(ip_check_dict, hip)
+            host = ip_check(hip)
+            if exists is True:
+                total = total + 1
+            if host.is_alive ==  True and exists is False:
+                add_ip(hip, prefix)
+            elif host.is_alive == False and exists is True:
+                print('{} is offline but is in the database'.format(hip))
+                set_tag(ipid)
+            else:
+                pass  
+            #items = items + 1
         print('Total IPs active and in the database: {}'.format(total))
 
     
