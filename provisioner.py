@@ -6,6 +6,7 @@ import socket
 from icmplib import ping
 import time
 import ipaddress
+import argparse
 
 config = configparser.ConfigParser()
 config.read('config')
@@ -84,17 +85,20 @@ def exist_check(ip_check_dict, hip):
 def ip_check(hip):
     return ping(hip, count=1, interval=0.01, timeout=0.1, privileged=False)
 
-def ip_check_create():
+def ip_check_create(arg_network = ''):
     ip_check_dict = {}  
+    network = []
     handler = 'prefixes/'
     url, headers = request(handler)
     response = requests.get(url, verify=False, headers=headers)
     response = response.json()
-    network = get_prefix(response)
+    if arg_network: network.append(arg_network)
+    else:
+        print('match')
+        network = get_prefix(response)
     for items in network:
         netnet = ipaddress.ip_network(items)
         prefix = (str(netnet).split('/')[1])
-        print(prefix)
         total = 0
         print('*'*25)
         print('testing network: {}'.format(netnet))
@@ -104,7 +108,7 @@ def ip_check_create():
             print(hip)
             exists, ip_check_dict, ipid = exist_check(ip_check_dict, hip)
             host = ip_check(hip)
-            if exists is True:
+            if exists is True: 
                 total = total + 1
             if host.is_alive ==  True and exists is False:
                 add_ip(hip, prefix)
@@ -117,4 +121,13 @@ def ip_check_create():
         end = time.clock_gettime(0)
         print(f'it took {end - start} seconds to complete the last function')
     
-ip_check_create()
+def arg_input():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--network', help='define network to run provisioner agains', required=False, action='store')
+    args=parser.parse_args()
+
+    if args.network: ip_check_create(args.network)
+
+    else: ip_check_create()
+
+if __name__ == '__main__': arg_input()
