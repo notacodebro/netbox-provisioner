@@ -92,18 +92,13 @@ def ip_check_create():
     response = response.json()
     network = get_prefix(response)
     for items in network:
-        #networkid = items.split('.')
-        #network = "{}.{}.{}.".format(networkid[0], networkid[1], networkid[2])
         netnet = ipaddress.ip_network(items)
-        #print(type(netnet))
         prefix = (str(netnet).split('/')[1])
         print(prefix)
-        blah = input('hit a key')
-        #sortednet = items.split('/')
-        #items = 1
         total = 0
         print('*'*25)
         print('testing network: {}'.format(netnet))
+        start = time.clock_gettime(0)
         for nets in netnet.hosts():
             hip = str(nets)
             print(hip)
@@ -118,10 +113,8 @@ def ip_check_create():
                 set_tag(ipid)
             else:
                 pass  
-            #items = items + 1
         print('Total IPs active and in the database: {}'.format(total))
-
+        end = time.clock_gettime(0)
+        print(f'it took {end - start} seconds to complete the last function')
     
 ip_check_create()
-ts = time.time()
-print(ts)
