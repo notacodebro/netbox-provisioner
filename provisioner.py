@@ -18,7 +18,7 @@ def request(handler):
     The returned data is the composed URL and header which includes the
     authentication token. """
     requests.urllib3.disable_warnings()
-    url="https://{}/api/ipam/{}".format(config['PARAMS']['nb_ip'], handler)
+    url = f"https://{config['PARAMS']['nb_ip']}/api/ipam/{handler}"
     token=config['PARAMS']['token']
     headers = {
         "Content-Type": "application/json",
@@ -36,34 +36,34 @@ def get_prefix(response):
     return network
 
 def set_tag(ipid):
-    tag = 'ip-down' 
+    """ this function is not working. The intent is to set tags based on ICMP status
+    to preserve the IP allocation when a host is down/offline and not decomissioned"""
+    _tag = 'ip-down' 
     print('entering tagging function')
-    handler = "ip-addresses/{}/".format(ipid)
+    handler = f"ip-addresses/{ipid}/"
     url, headers = request(handler)
     print(ipid)
-    ipdict = {"tags": "['{}']".format(tag)}
+    ipdict = {"tags": "['{_tag}']"}
     response = requests.patch(url, json=ipdict, verify=False, headers=headers)
-    print(response)
 
 def add_ip(hip, prefix):
     handler = "ip-addresses/"
     url, headers = request(handler)
     ipdict = {"address": "{}/{}".format(hip, prefix)}
     response = requests.post(url, json=ipdict, verify=False, headers=headers)
-    print(response)
-    blah = input("added IP:".format(hip))
+    print(f'new IP address added: {hip}')
 
 def dns_update(hip, ipid):
     handler = "ip-addresses/{}/".format(ipid)
     url, headers = request(handler)
     try:
         dns_name = socket.gethostbyaddr(hip)
-        print(dns_name[0])
+        #print(dns_name[0])
         dnsdict = {"dns_name": "{}".format(dns_name[0])}
         response = requests.patch(url, json=dnsdict, verify=False, headers=headers)
-        print('adding dns record for {}'.format(hip))
+        print(f'adding dns record for {hip}')
     except:
-        print('PRT record missing for {}. Please check zone'.format(hip))
+        print(f'PRT record missing for {hip}. Please check zone')
 
 def exist_check(ip_check_dict, hip):
     ipid = 0
@@ -76,7 +76,7 @@ def exist_check(ip_check_dict, hip):
         _network = val["display"].split("/")
         ipid = val['id']
         if _network[0] == hip:
-            dns_update(hip, ipid)
+            #dns_update(hip, ipid)
             return True, ip_check_dict, ipid
         else:
             pass
@@ -87,44 +87,42 @@ def ip_check(hip):
 
 def ip_check_create(arg_network = ''):
     ip_check_dict = {}  
-    network = []
+    _network = []
     handler = 'prefixes/'
     url, headers = request(handler)
     response = requests.get(url, verify=False, headers=headers)
     response = response.json()
-    if arg_network: network.append(arg_network)
+    if arg_network: _network.append(arg_network)
     else:
-        print('match')
-        network = get_prefix(response)
-    for items in network:
-        netnet = ipaddress.ip_network(items)
-        prefix = (str(netnet).split('/')[1])
-        total = 0
+        _network = get_prefix(response)
+    for items in _network:
+        _netid = ipaddress.ip_network(items)
+        prefix = (str(_netid).split('/')[1])
+        _total = 0
         print('*'*25)
-        print('testing network: {}'.format(netnet))
+        print(f'testing network: {_netid}')
         start = time.clock_gettime(0)
-        for nets in netnet.hosts():
+        for nets in _netid.hosts():
             hip = str(nets)
-            print(hip)
             exists, ip_check_dict, ipid = exist_check(ip_check_dict, hip)
             host = ip_check(hip)
             if exists is True: 
-                total = total + 1
+                _total = _total + 1
             if host.is_alive ==  True and exists is False:
                 add_ip(hip, prefix)
             elif host.is_alive == False and exists is True:
-                print('{} is offline but is in the database'.format(hip))
-                set_tag(ipid)
+                print(f'{hip} is offline but is in the database')
+                #set_tag(ipid)
             else:
                 pass  
-        print('Total IPs active and in the database: {}'.format(total))
+        print(f'Total IPs active and in the database: {_total}')
         end = time.clock_gettime(0)
-        print(f'it took {end - start} seconds to complete the last function')
+        print(f'it took {round(end - start)} seconds to complete the last function')
     
 def arg_input():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--network', help='define network to run provisioner agains', required=False, action='store')
-    args=parser.parse_args()
+    _parser = argparse.ArgumentParser()
+    _parser.add_argument('--network', help='define network to run provisioner agains', required=False, action='store')
+    args=_parser.parse_args()
 
     if args.network: ip_check_create(args.network)
 
