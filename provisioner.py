@@ -1,12 +1,14 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 
 import requests
 import json
 import configparser
 import socket
-from icmplib import ping
 import time
 import ipaddress
 import argparse
+import progressbar
+from icmplib import ping
+from tabulate import tabulate
 
 config = configparser.ConfigParser()
 config.read('config')
@@ -101,7 +103,7 @@ def exist_check(ip_check_dict, hip):
 def ip_check(hip):
     """ This function performs ICMP checking for ip/host existence. It recieved the provided or enumerated
     IP range/host """
-    return ping(hip, count=1, interval=0.01, timeout=0.1, privileged=False)
+    return ping(hip, count=1, interval=0.06, timeout=0.1, privileged=False)
 
 def ip_check_create(arg_network = ''):
     """ This function provides the intial triage and direction of the provisioner. the default parameter is blank to 
@@ -110,6 +112,7 @@ def ip_check_create(arg_network = ''):
     """
     ip_check_dict = {}  
     _network = []
+    _offline_hosts = []
     handler = 'prefixes/'
     url, headers = request(handler)
     response = requests.get(url, verify=False, headers=headers)
@@ -124,6 +127,8 @@ def ip_check_create(arg_network = ''):
         print('*'*25)
         print(f'testing network: {_netid}')
         start = time.clock_gettime(0)
+        bar = progressbar.ProgressBar(max_value=30, max_error=False, poll_interval=.1)
+        print('\n')
         for nets in _netid.hosts():
             hip = str(nets)
             exists, ip_check_dict, ipid = exist_check(ip_check_dict, hip)
@@ -133,14 +138,14 @@ def ip_check_create(arg_network = ''):
             if host.is_alive ==  True and exists is False:
                 add_ip(hip, prefix)
             elif host.is_alive == False and exists is True:
-                print(f'{hip} is offline but is in the database')
+                _offline_hosts.append(hip)
                 #set_tag(ipid)
             else:
                 pass  
-        print(f'Total IPs active and in the database: {_total}')
+            bar.update(_total)
         end = time.clock_gettime(0)
-        print(f'it took {round(end - start)} seconds to complete the last function')
-    
+        table = [['Online IPs', _total], ['Offlne IPs', _offline_hosts], ['Completed', f'{round(end - start)} seconds',]]
+        print(tabulate(table, tablefmt="grid", maxcolwidths=[None, 21]))
 def arg_input():
     """ Argument parse function to accept spcific network range from user input. This function
     will default to run against network ranges returned in the ip_check_create function """
