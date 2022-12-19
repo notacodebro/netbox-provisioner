@@ -28,7 +28,8 @@ def request(handler):
     return url, headers
 
 def get_prefix(response):
-    """ This get prefix function accepts """ 
+    """ This get prefix function accepts the response JSON object from the prefix endpoint and
+    return the network ID for each index in the list""" 
     network = []
     for key, val in enumerate(response['results']):
         octet = (val['prefix'])
@@ -36,7 +37,7 @@ def get_prefix(response):
     return network
 
 def set_tag(ipid):
-    """ this function is not working. The intent is to set tags based on ICMP status
+    """ This function is not working. The intent is to set tags based on ICMP status
     to preserve the IP allocation when a host is down/offline and not decomissioned"""
     _tag = 'ip-down' 
     print('entering tagging function')
@@ -47,6 +48,13 @@ def set_tag(ipid):
     response = requests.patch(url, json=ipdict, verify=False, headers=headers)
 
 def add_ip(hip, prefix):
+    """ The add IP function does exactly what it says, it adds IPs irrespective of database 
+    presense, which is checked in a different function. A print is confirmed within the function rather
+    than a return and mapped status 
+    
+    this function recieves provided or enumerated IP addresses and the network prefix
+    """
+
     handler = "ip-addresses/"
     url, headers = request(handler)
     ipdict = {"address": "{}/{}".format(hip, prefix)}
@@ -54,6 +62,10 @@ def add_ip(hip, prefix):
     print(f'new IP address added: {hip}')
 
 def dns_update(hip, ipid):
+    """ This function will update the DNS record for each IP address. It will perform the update
+    irrespective of an existence check(to be upated)
+
+    this function recieves provided or enumerated IP addresses and the ip address identifier provided by the netbox endpoint"""
     handler = "ip-addresses/{}/".format(ipid)
     url, headers = request(handler)
     try:
@@ -66,6 +78,10 @@ def dns_update(hip, ipid):
         print(f'PRT record missing for {hip}. Please check zone')
 
 def exist_check(ip_check_dict, hip):
+    """ This function checks the existing of each IP address in the network range to ensre
+    that IP addresses are not continually re-added or overwritten.
+
+    This funtion recieves individual IPs through hip and the the ip_check_dict for id parsing"""  
     ipid = 0
     handler = 'ip-addresses/?limit=5000'
     if not ip_check_dict:
@@ -83,9 +99,15 @@ def exist_check(ip_check_dict, hip):
     return False, ip_check_dict, ipid
 
 def ip_check(hip):
+    """ This function performs ICMP checking for ip/host existence. It recieved the provided or enumerated
+    IP range/host """
     return ping(hip, count=1, interval=0.01, timeout=0.1, privileged=False)
 
 def ip_check_create(arg_network = ''):
+    """ This function provides the intial triage and direction of the provisioner. the default parameter is blank to 
+    account for no argument provided by the user. The function will initially poll the prefixes endpoint and recieve a 
+    list of network's that are *required* to be pre-populated or user defined through the call of the script. 
+    """
     ip_check_dict = {}  
     _network = []
     handler = 'prefixes/'
@@ -120,6 +142,8 @@ def ip_check_create(arg_network = ''):
         print(f'it took {round(end - start)} seconds to complete the last function')
     
 def arg_input():
+    """ Argument parse function to accept spcific network range from user input. This function
+    will default to run against network ranges returned in the ip_check_create function """
     _parser = argparse.ArgumentParser()
     _parser.add_argument('--network', help='define network to run provisioner agains', required=False, action='store')
     args=_parser.parse_args()
