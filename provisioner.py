@@ -51,17 +51,17 @@ def set_tag(ipid):
 
 def add_ip(hip, prefix):
     """ The add IP function does exactly what it says, it adds IPs irrespective of database 
-    presense, which is checked in a different function. A print is confirmed within the function rather
-    than a return and mapped status 
+    presense, which is checked in a different function. 
     
-    this function recieves provided or enumerated IP addresses and the network prefix
+    this function recieves provided or enumerated IP addresses and the network prefix and returns each host
+    ip that is added for structured priting
     """
 
     handler = "ip-addresses/"
     url, headers = request(handler)
     ipdict = {"address": "{}/{}".format(hip, prefix)}
     response = requests.post(url, json=ipdict, verify=False, headers=headers)
-    print(f'new IP address added: {hip}')
+    return hip
 
 def dns_update(hip, ipid):
     """ This function will update the DNS record for each IP address. It will perform the update
@@ -113,6 +113,7 @@ def ip_check_create(arg_network = ''):
     ip_check_dict = {}  
     _network = []
     _offline_hosts = []
+    _added_ips = []
     handler = 'prefixes/'
     url, headers = request(handler)
     response = requests.get(url, verify=False, headers=headers)
@@ -136,7 +137,8 @@ def ip_check_create(arg_network = ''):
             if exists is True: 
                 _total = _total + 1
             if host.is_alive ==  True and exists is False:
-                add_ip(hip, prefix)
+                hip = add_ip(hip, prefix)
+                _added_ips.append(hip)
             elif host.is_alive == False and exists is True:
                 _offline_hosts.append(hip)
                 #set_tag(ipid)
@@ -144,7 +146,7 @@ def ip_check_create(arg_network = ''):
                 pass  
             bar.update(_total)
         end = time.clock_gettime(0)
-        table = [['Online IPs', _total], ['Offlne IPs', _offline_hosts], ['Completed', f'{round(end - start)} seconds',]]
+        table = [['Online IPs', _total], ['Offlne IPs', _offline_hosts], ['Added IPs', _added_ips], ['Completed', f'{round(end - start)} seconds',]]
         print(tabulate(table, tablefmt="grid", maxcolwidths=[None, 21]))
 def arg_input():
     """ Argument parse function to accept spcific network range from user input. This function
